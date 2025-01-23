@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/firebaseConfig';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 
-const AddStudentModal = ({ isOpen, onClose }) => {
+const AddStudentModal = ({ isOpen, onClose, studentToEdit }) => {
   const [formData, setFormData] = useState({
     id: '',
     name: '',
@@ -19,6 +19,13 @@ const AddStudentModal = ({ isOpen, onClose }) => {
     remarks: '',
   });
 
+  // Pre-fill the form if a student is being edited
+  useEffect(() => {
+    if (studentToEdit) {
+      setFormData(studentToEdit);
+    }
+  }, [studentToEdit]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -27,8 +34,15 @@ const AddStudentModal = ({ isOpen, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await addDoc(collection(db, 'students'), formData);
-      onClose();
+      if (formData.id) {
+        // Update existing student
+        const studentDoc = doc(db, 'students', formData.id);
+        await updateDoc(studentDoc, formData);
+      } else {
+        // Add new student
+        await addDoc(collection(db, 'students'), formData);
+      }
+      onClose(); // Close the modal after submitting
     } catch (err) {
       console.error(err);
     }
@@ -65,8 +79,61 @@ const AddStudentModal = ({ isOpen, onClose }) => {
           value={formData.rollNumber}
           onChange={handleChange}
         />
-        {/* Add other fields here */}
-        <button type="submit">Add Student</button>
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+        />
+        <input
+          type="tel"
+          name="phone"
+          placeholder="Phone"
+          value={formData.phone}
+          onChange={handleChange}
+        />
+        <input
+          type="text"
+          name="address"
+          placeholder="Address"
+          value={formData.address}
+          onChange={handleChange}
+        />
+        <input
+          type="date"
+          name="dob"
+          value={formData.dob}
+          onChange={handleChange}
+        />
+        <input
+          type="text"
+          name="guardianName"
+          placeholder="Guardian Name"
+          value={formData.guardianName}
+          onChange={handleChange}
+        />
+        <input
+          type="tel"
+          name="guardianContact"
+          placeholder="Guardian Contact"
+          value={formData.guardianContact}
+          onChange={handleChange}
+        />
+        <input
+          type="date"
+          name="admissionDate"
+          value={formData.admissionDate}
+          onChange={handleChange}
+        />
+        <input
+          type="text"
+          name="remarks"
+          placeholder="Remarks"
+          value={formData.remarks}
+          onChange={handleChange}
+        />
+        <button type="submit">{formData.id ? 'Update Student' : 'Add Student'}</button>
       </form>
     </div>
   ) : null;

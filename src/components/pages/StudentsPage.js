@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, addDoc, deleteDoc, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase/firebaseConfig';
 import Sidebar from '../Sidebar/Sidebar';
+import { v4 as uuidv4 } from 'uuid'; 
 
 const StudentsPage = () => {
   const [students, setStudents] = useState([]);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false); 
   const [formData, setFormData] = useState({
     id: '',
     name: '',
@@ -22,7 +23,6 @@ const StudentsPage = () => {
     remarks: '',
   });
 
-  // Fetch students from Firestore
   const fetchStudents = async () => {
     const studentsCollection = collection(db, 'students');
     const studentSnapshot = await getDocs(studentsCollection);
@@ -31,24 +31,60 @@ const StudentsPage = () => {
       ...doc.data(),
     }));
     setStudents(studentList);
+    
   };
 
-  // Add or Update Student
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const studentData = {
+      ...formData,
+      id: formData.id || uuidv4(), // If ID doesn't exist, generate one using UUID
+    };
+
+    const generateUniqueId = async () => {
+        let uniqueId;
+        const studentsCollection = collection(db, 'students');
+        let idExists = true;
+      
+        while (idExists) {
+          // Generate a random 4-digit number
+          uniqueId = Math.floor(1000 + Math.random() * 9000).toString();
+      
+          // Check if this ID already exists
+          const studentSnapshot = await getDocs(studentsCollection);
+          const studentList = studentSnapshot.docs.map((doc) => doc.data().id);
+      
+          // If the ID is not in the list, it's unique
+          idExists = studentList.includes(uniqueId);
+        }
+      
+        return uniqueId;
+      };
+      
+
+    if (!formData.id) {
+        // Generate a unique 4-digit ID if none is provided
+        studentData.id = await generateUniqueId();
+      }
+      
     if (formData.id) {
-      // Update student
       const studentDoc = doc(db, 'students', formData.id);
-      await updateDoc(studentDoc, formData);
+      await updateDoc(studentDoc, studentData); // Update using studentData
     } else {
-      // Add student
-      await addDoc(collection(db, 'students'), formData);
+      // Add student with the unique ID
+      await addDoc(collection(db, 'students'), studentData); // Use studentData here
     }
     setModalOpen(false);
     fetchStudents();
   };
 
   // Delete Student
+  const handleEdit = (student) => {
+    // Handle editing logic
+    setFormData(student);
+    setModalOpen(true); // Open modal to edit student
+  };
+  
   const handleDelete = async (id) => {
     const studentDoc = doc(db, 'students', id);
     await deleteDoc(studentDoc);
@@ -62,18 +98,18 @@ const StudentsPage = () => {
     } else {
       setFormData({
         id: '',
-        name: '',
-        class: '',
-        section: '',
-        rollNumber: '',
-        email: '',
-        phone: '',
-        address: '',
-        dob: '',
-        guardianName: '',
-        guardianContact: '',
-        admissionDate: '',
-        remarks: '',
+        name: ''
+        // class: '',
+        // section: '',
+        // rollNumber: '',
+        // email: '',
+        // phone: '',
+        // address: '',
+        // dob: '',
+        // guardianName: '',
+        // guardianContact: '',
+        // admissionDate: '',
+        // remarks: '',
       });
     }
     setModalOpen(true);
@@ -95,9 +131,9 @@ const StudentsPage = () => {
               <th>ID</th>
               <th>Name</th>
               <th>Class</th>
-              <th>Section</th>
+              {/* <th>Section</th>
               <th>Roll Number</th>
-              <th>Action</th>
+              <th>Action</th> */}
             </tr>
           </thead>
           <tbody>
@@ -106,8 +142,8 @@ const StudentsPage = () => {
                 <td>{student.id}</td>
                 <td>{student.name}</td>
                 <td>{student.class}</td>
-                <td>{student.section}</td>
-                <td>{student.rollNumber}</td>
+                {/* <td>{student.section}</td>
+                <td>{student.rollNumber}</td> */}
                 <td>
                   <button onClick={() => openModal(student)}>Edit</button>
                   <button onClick={() => handleDelete(student.id)}>Delete</button>
@@ -136,7 +172,7 @@ const StudentsPage = () => {
                   onChange={(e) => setFormData({ ...formData, class: e.target.value })}
                   required
                 />
-                <input
+                {/* <input
                   type="text"
                   placeholder="Section"
                   value={formData.section}
@@ -198,7 +234,7 @@ const StudentsPage = () => {
                   placeholder="Remarks"
                   value={formData.remarks}
                   onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                />
+                /> */}
                 <button type="submit">Submit</button>
                 <button type="button" onClick={() => setModalOpen(false)}>Cancel</button>
               </form>
